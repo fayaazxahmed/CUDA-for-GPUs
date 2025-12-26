@@ -1,0 +1,37 @@
+# makefile_cuda for building, running, and cleaning CUDA programs (T4 GPU)
+# Usage:
+#   make -f makefile_cuda        # build all CUDA test programs
+#   make -f makefile_cuda run    # run all CUDA test executables
+#   make -f makefile_cuda clean  # remove build artifacts
+
+NVCC = nvcc
+NVCCFLAGS = -O2 -arch=sm_75
+SRCDIR = .
+CU_SOURCES = $(SRCDIR)/tensor_cuda_test.cu $(SRCDIR)/tensor_cuda_compare.cu
+CPP_SOURCE = $(SRCDIR)/tensor.cpp
+CPP_OBJECT = $(CPP_SOURCE:.cpp=.o)
+CU_OBJECTS = $(CU_SOURCES:.cu=.o)
+CU_TARGETS = $(CU_SOURCES:.cu=.out)
+
+
+
+all: $(CU_TARGETS)
+
+# Compile C++ object
+%.o: %.cpp
+	$(NVCC) $(NVCCFLAGS) -c $< -o $@
+
+# Compile CUDA object
+%.o: %.cu
+	$(NVCC) $(NVCCFLAGS) -c $< -o $@
+
+# Link executable
+%.out: %.cu $(SRCDIR)/tensor.hpp $(SRCDIR)/tensor_cuda.hpp $(SRCDIR)/tensor_cuda.cu $(CPP_OBJECT)
+	$(NVCC) $(NVCCFLAGS) -o $@ $< $(SRCDIR)/tensor_cuda.cu $(CPP_OBJECT)
+
+run: $(CU_TARGETS)
+	./tensor_cuda_test.out
+	./tensor_cuda_compare.out
+
+clean:
+	rm -f $(CU_TARGETS) $(CU_OBJECTS)
